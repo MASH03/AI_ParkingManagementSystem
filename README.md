@@ -128,7 +128,8 @@ ParkSmart AI includes password hashing, CSRF protection, secure session settings
 - [Architecture and agent contracts](ARCHITECTURE.md)
 - [Complete final-project blueprint](FINAL_PROJECT_BLUEPRINT.md)
 - [Security](SECURITY.md)
-- [Deployment](DEPLOYMENT.md)
+- [Deployment Guide (Render & Production)](DEPLOYMENT.md)
+- [Render Deployment Blueprint](render.yaml)
 - [AWS Terraform foundation](terraform/aws/README.md)
 
 ## Screenshots

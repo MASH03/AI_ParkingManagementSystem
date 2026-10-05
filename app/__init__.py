@@ -9,7 +9,10 @@ from flask import Flask, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user
 from sqlalchemy import text
 
+from werkzeug.middleware.proxy_fix import ProxyFix
+
 from config import Config
+
 
 from app.extensions import csrf, db, limiter, login_manager, migrate
 from app.models import (
@@ -32,6 +35,9 @@ def create_app(config_object=Config) -> Flask:
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(config_object)
     os.makedirs(app.instance_path, exist_ok=True)
+
+    if app.config.get("SESSION_COOKIE_SECURE") or os.getenv("FLASK_ENV") == "production":
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
     db.init_app(app)
     migrate.init_app(app, db)
