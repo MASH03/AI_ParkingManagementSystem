@@ -125,3 +125,87 @@ def test_feedback_loop_runs_at_most_one_additional_iteration(app, admin_client):
     assert run["iteration_count"] == 2
     assert len(run["agents"]) == 4
     assert provider.recommendation_calls == 2
+
+
+def test_openai_provider_fallback_on_failure(app, monkeypatch):
+    from unittest.mock import MagicMock
+    from app.services.ai.provider import OpenAIProvider
+
+    with app.app_context():
+        app.config["OPENAI_API_KEY"] = "sk-fake-primary"
+        app.config["OPENAI_BACKUP_API_KEY"] = "sk-fake-backup"
+        app.config["OPENAI_MODEL"] = "gpt-5-mini"
+        app.config["OPENAI_FALLBACK_MODEL"] = "gpt-4o-mini"
+
+        provider = OpenAIProvider()
+        assert len(provider.candidates) == 4  # 2 keys x 2 models
+
+        call_history = []
+        fake_parsed = MagicMock()
+
+        def mock_parse(model, **kwargs):
+            call_history.append(model)
+            if len(call_history) == 1:
+                raise RuntimeError("Rate limit or token quota exceeded")
+            mock_response = MagicMock()
+            mock_response.output_parsed = fake_parsed
+            return mock_response
+
+        for candidate in provider.candidates:
+            monkeypatch.setattr(candidate["client"].responses, "parse", mock_parse)
+
+        result = provider.generate(
+            instructions="test",
+            payload={"sample": "data"},
+            schema=OperationsAnalysis,
+        )
+        assert result == fake_parsed
+        assert len(call_history) == 2
+        assert call_history[0] == "gpt-5-mini"
+        assert call_history[1] == "gpt-4o-mini"
+
+
+def test_openrouter_provider_fallback_support(app, monkeypatch):
+    from unittest.mock import MagicMock
+    from app.services.ai.provider import OpenAIProvider
+
+    with app.app_context():
+        app.config["OPENAI_API_KEY"] = "sk-fake-openai"
+        app.config["OPENAI_BACKUP_API_KEY"] = ""
+        app.config["OPENROUTER_API_KEY"] = "sk-fake-openrouter"
+        app.config["OPENROUTER_MODEL"] = "openai/gpt-4o-mini"
+        app.config["OPENROUTER_FALLBACK_MODEL"] = "google/gemini-2.0-flash-001"
+
+        provider = OpenAIProvider()
+        openrouter_candidates = [c for c in provider.candidates if "OpenRouter" in c["label"]]
+        assert len(openrouter_candidates) == 2
+
+        fake_parsed = MagicMock()
+        mock_chat_response = MagicMock()
+        mock_chat_response.choices = [MagicMock(message=MagicMock(parsed=fake_parsed))]
+
+        # OpenAI direct fails, OpenRouter succeeds
+        monkeypatch.setattr(
+            provider.candidates[0]["client"].responses,
+            "parse",
+            MagicMock(side_effect=RuntimeError("OpenAI out of quota")),
+        )
+        monkeypatch.setattr(
+            provider.candidates[1]["client"].responses,
+            "parse",
+            MagicMock(side_effect=RuntimeError("OpenAI out of quota")),
+        )
+        monkeypatch.setattr(
+            openrouter_candidates[0]["client"].beta.chat.completions,
+            "parse",
+            MagicMock(return_value=mock_chat_response),
+        )
+
+        result = provider.generate(
+            instructions="test",
+            payload={"sample": "data"},
+            schema=OperationsAnalysis,
+        )
+        assert result == fake_parsed
+
+

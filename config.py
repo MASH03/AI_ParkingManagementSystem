@@ -28,9 +28,15 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+    OPENAI_BACKUP_API_KEY = os.getenv("OPENAI_BACKUP_API_KEY", "")
     OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5-mini")
+    OPENAI_FALLBACK_MODEL = os.getenv("OPENAI_FALLBACK_MODEL", "gpt-4o-mini")
     OPENAI_TIMEOUT_SECONDS = 45.0
     OPENAI_MAX_OUTPUT_TOKENS = 3000
+    OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
+    OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openai/gpt-4o-mini")
+    OPENROUTER_FALLBACK_MODEL = os.getenv("OPENROUTER_FALLBACK_MODEL", "google/gemini-2.0-flash-001")
+    OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
     FACTORY_SYNC = False
     # Use Redis in a multi-instance deployment. Memory storage remains a safe
     # local-development default, but must not be used to coordinate rate limits

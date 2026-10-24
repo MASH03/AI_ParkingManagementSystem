@@ -1,8 +1,8 @@
 from collections import Counter
 from datetime import date, datetime, time, timedelta, timezone
 
-from flask import Blueprint, jsonify, render_template
-from flask_login import login_required
+from flask import Blueprint, jsonify, redirect, render_template, url_for
+from flask_login import current_user, login_required
 from sqlalchemy import func
 
 from app.models import (
@@ -11,8 +11,10 @@ from app.models import (
     Facility,
     IncidentReport,
     MaintenanceRequest,
+    ParkZone,
     Reservation,
     Ticket,
+    TicketPrice,
     Visitor,
     VisitorFeedback,
 )
@@ -26,9 +28,38 @@ def _bounds(target: date):
     return start, start + timedelta(days=1)
 
 
+@bp.get("/landing")
+@bp.get("/home")
+def landing():
+    zones = ParkZone.query.order_by(ParkZone.name).all()
+    ticket_prices = TicketPrice.query.order_by(TicketPrice.amount).all()
+    facilities = Facility.query.filter_by(status="Available").limit(8).all()
+    total_capacity = sum(z.capacity for z in zones) or 500
+    current_inside = sum(
+        visitor.guest_count for visitor in Visitor.query.filter(Visitor.exit_time.is_(None)).all()
+    )
+    occupancy_pct = min(100, int((current_inside / total_capacity) * 100)) if total_capacity else 0
+    return render_template(
+        "landing.html",
+        zones=zones,
+        ticket_prices=ticket_prices,
+        facilities=facilities,
+        total_capacity=total_capacity,
+        current_inside=current_inside,
+        occupancy_pct=occupancy_pct,
+    )
+
+
 @bp.get("/")
-@login_required
 def index():
+    if not current_user.is_authenticated:
+        return redirect(url_for("dashboard.landing"))
+    return render_template("dashboard.html")
+
+
+@bp.get("/dashboard")
+@login_required
+def dashboard_view():
     return render_template("dashboard.html")
 
 

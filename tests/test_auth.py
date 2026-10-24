@@ -26,3 +26,11 @@ def test_role_permissions(staff_client):
     assert staff_client.get("/reports").status_code == 403
     assert staff_client.post("/api/factory/start", json={}).status_code == 403
     assert staff_client.get("/visitors").status_code == 200
+
+
+def test_landing_page_is_public(client):
+    response = client.get("/landing")
+    assert response.status_code == 200
+    assert b"ParkSmart" in response.data
+    assert b"Live Territory Status" in response.data
+

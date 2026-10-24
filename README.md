@@ -18,6 +18,7 @@ This is not a chatbot. The agents receive privacy-minimized operational aggregat
 - Anonymous public visitor feedback plus staff review workflow
 - Staff assignments, shifts, account status, and administrator-created login accounts
 - Date-filtered reports with JSON, CSV, and printable HTML exports
+- Public interactive landing page with live zone occupancy, facility amenities, and ticket pricing
 - AI Factory status polling, agent logs, run history, partial-failure recovery, and Agent 2 retry
 - Administrator-only recommendation approval, rejection, implementation, and notes
 
@@ -102,7 +103,12 @@ After creating an administrator, `flask seed-demo` adds clearly labeled classroo
 | --- | --- |
 | `SECRET_KEY` | Flask session and CSRF signing key |
 | `OPENAI_API_KEY` | Server-side OpenAI credential; never exposed to JavaScript |
-| `OPENAI_MODEL` | Structured-output capable model name |
+| `OPENAI_BACKUP_API_KEY` | Optional backup OpenAI key used if primary account runs out of tokens/quota |
+| `OPENAI_MODEL` | Structured-output capable primary model name (defaults to `gpt-5-mini`) |
+| `OPENAI_FALLBACK_MODEL` | Fallback model used if the primary model fails or runs out of tokens (defaults to `gpt-4o-mini`) |
+| `OPENROUTER_API_KEY` | Optional OpenRouter API key for multi-model / multi-provider routing and fallback |
+| `OPENROUTER_MODEL` | Primary model on OpenRouter (e.g. `openai/gpt-4o-mini`, `google/gemini-2.0-flash-001`, `deepseek/deepseek-chat`) |
+| `OPENROUTER_FALLBACK_MODEL` | Secondary fallback model on OpenRouter |
 | `DATABASE_URL` | SQLite or PostgreSQL SQLAlchemy URL |
 | `RATELIMIT_STORAGE_URI` | Redis URL for shared rate limits in production; `memory://` locally |
 | `FLASK_ENV` | `development` or `production` cookie/security behavior |

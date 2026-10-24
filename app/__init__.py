@@ -4,7 +4,7 @@ import os
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 
-import click
+import click1
 from flask import Flask, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user
 from sqlalchemy import text
