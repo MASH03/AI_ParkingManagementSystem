@@ -1,0 +1,32 @@
+# Render Infrastructure-as-Code Blueprint
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: parksmart-app
+    runtime: python
+    buildCommand: "pip install -r requirements.txt"
+    preDeployCommand: "flask init-db"
+    startCommand: "gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 90 run:app"
+    healthCheckPath: "/health"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: parksmart-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FLASK_ENV
+        value: production
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      - key: PYTHON_VERSION
+        value: 3.11.9
+
+databases:
+  - name: parksmart-db
+    databaseName: parksmart
+    user: parksmart_user
+    plan: free
